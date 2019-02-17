@@ -3,8 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 type Feature struct {
@@ -148,9 +151,23 @@ func getJson(url string, target interface{}) error {
 	return json.NewDecoder(r.Body).Decode(target)
 }
 
+func GetForecast(w http.ResponseWriter, req *http.Request) {
+	enableCors(&w)
+	json.NewEncoder(w).Encode(&JSONResponse)
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+var JSONResponse = new(Body)
+
 func main() {
 	url := "http://api.wunderground.com/api/1e404159ad02dddd/forecast10day/q/PA/Philadelphia.json"
-	JSONResponse := Body{}
 	getJson(url, &JSONResponse)
 	fmt.Println(JSONResponse)
+
+	router := mux.NewRouter()
+	router.HandleFunc("/forecast", GetForecast).Methods("GET")
+	log.Fatal(http.ListenAndServe(":8000", router))
 }
